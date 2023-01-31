@@ -7,5 +7,5 @@ Rails.application.routes.draw do
   get "search", to: "search#index", as: :search
   get "add", to: "movie_catalog#add", as: :add
   get "destroy", to: "movie_catalog#destroy", as: :destroy
-  get "rate", to: "movie_catalog#rate", as: :rate
+  post "rate", to: "movie_catalog#rate", as: :rate
 end

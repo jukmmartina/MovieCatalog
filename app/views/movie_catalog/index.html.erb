@@ -5,24 +5,17 @@
       background: black;
     }
 </style>
-<script>
-  async function rate(id){
-    var rating = parseInt(document.getElementById("rate"+id).value);
-    console.log("rating");
-    if(rating >= 0 && rating <=10){
-     const ratingLink = "http://localhost:3000/rate?rating="+rating+"&id="+id;
-     console.log(ratingLink);
-     location.href = ratingLink;
-    }
-
-  }
-</script>
 <div class = "d-flex align-items-center justify-content-center">
   <h1>Movie catalog</h1>
 </div>
 <%= button_to "Add new movie", search_path, method: :get%>
 <table id = "movies_display"></table>
 <% @movies.each do |movie| %>
+  <%- if movie.rating == nil %>
+    <%- rating = "--" %>
+  <%- else %>
+    <%- rating = movie.rating %>
+  <%- end %>
   <p style = "visibility: hidden;"><%= destroy_path = "http://localhost:3000/destroy?id=#{movie.id}" %></p>
   <ul class = "navbar-nav">
     <li>
@@ -37,21 +30,18 @@
               <p>Rutime: <%= movie.runtime %></p>
               <p>Release: <%= movie.release %></p>
               <p>Genres: <%= movie.genres %></p>
-              <p>Rating: <%= movie.rating %> </p>
+              <p>Rating: <%= rating %> </p>
             </figcaption>
           </figure>
         </a>
       </div>
     </li>
     <li>
-      <ul class="navbar-nav mr-auto" style="width: 60%">
-        <li class="nav-item active">
-          <input class="form-control mr-sm-2" type="rate" placeholder="Rate movie(0-10)" aria-label="Rate" id="rate<%=movie.id%>">
-        </li>
-        <li class="nav-item active" style="margin-left: 30px;">
-          <button onclick="rate(<%=movie.id%>);">Rate</button>
-        </li>
-      </ul>
-    </li>
-  </ul>
+      <%= form_with url: rate_path, local: true, method: :post do %>
+        <input name="id" style="visibility: hidden;" value =<%= movie.id%>>
+        <input name="rating", placeholder="Rate(0-10)"></input>
+      <button type="submit">Rate</button>
+    <% end %>
+  </li>
+</ul>
 <% end%>

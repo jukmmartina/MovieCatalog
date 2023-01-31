@@ -9,152 +9,95 @@
   const DETAILS_URL = "https://api.themoviedb.org/3/movie/";
   const TMDB_API_KEY = "d21b3a5266a4cf0deeece6c9c6782523";
   const BASE_URL = "https://image.tmdb.org/t/p/w500/";
+  const POPULAR_URL = "https://api.themoviedb.org/3/movie/popular?api_key="
+  const SEARCH_URL = "https://api.themoviedb.org/3/search/movie?api_key="
 
     async function getTMDB(){
-
-      const res = await fetch("https://api.themoviedb.org/3/movie/popular?api_key="+TMDB_API_KEY);
+      const res = await fetch(POPULAR_URL+TMDB_API_KEY);
       const json = await res.json();
       const movies = json.results;
-
       return movies;
     }
 
+    async function searchTMDB(searchMovie){
+      const res = await fetch(SEARCH_URL+TMDB_API_KEY+"&query="+searchMovie);
+      const json = await res.json();
+      const searchRes = json.results;
+      return searchRes;
+    }
+
+    async function displayMovies(movies){
+
+      let tbl = document.getElementById("movies_display");
+      tbl.innerHTML= '';
+
+      let counter = 0;
+      let container;
+      for (let movie of movies) {
+        if (counter % 3 == 0){
+          const newRow = document.createElement('tr');
+          tbl.appendChild(newRow);
+        }
+        container = document.createElement('td');
+        counter++;
+
+        const res = await fetch(DETAILS_URL + movie.id + "?api_key=" + TMDB_API_KEY);
+        const details = await res.json();
+        let image_path = "https://t3.ftcdn.net/jpg/02/48/42/64/240_F_248426448_NVKLywWqArG2ADUxDq6QprtIzsF82dMF.jpg";
+        if(movie.backdrop_path != null){
+          image_path ="https://image.tmdb.org/t/p/w500/" + movie.backdrop_path;
+        }
+        const genres = details.genres;
+        let genresString = "";
+        for(let i = 0; i<Object.keys(genres).length; i++){
+          if(i==(Object.keys(genres).length-1)){
+            genresString += genres[i].name
+          }
+          else{
+            genresString += genres[i].name + ",";
+          }
+        }
+        for(let i=0; i<genresString.length; i++){
+          if(genresString[i] == ' '){
+            genresString[i] = +'%20';
+          }
+        }
+        for(let i=0; i<details.original_title.length; i++){
+          if(details.original_title[i] == ' '){
+            details.original_title[i] = +'%20';
+          }
+        }
+
+        const addLink = "http://localhost:3000/add?image="+image_path+"&name="+details.original_title+"&runtime="+details.runtime+"&release="+details.release_date+"&genres="+genresString;
+        let template= `
+          <div class="container" style = "max-width: 90%; height: auto;">
+          <a href="${addLink}" class="addHover">
+            <figure class="figure">
+              <div class="card-img">
+                <img src="${image_path}" class="figure-img img-fluid rounded" alt="A">
+              </div>
+              <figcaption class="figure-caption text-center"><h5>${movie.original_title}</h5></figcaption>
+            </figure>
+          </a>
+        </div>
+          `
+        container.innerHTML = template;
+      tbl.appendChild(container);
+      };
+    }
+
     async function movies(){
-        const movies = await getTMDB();
-
-        let tbl = document.getElementById("movies_display");
-
-        let counter = 0;
-        let container;
-        for (let movie of movies) {
-          if (counter % 3 == 0){
-            const newRow = document.createElement('tr');
-            tbl.appendChild(newRow);
-          }
-            container = document.createElement('td');
-          counter++;
-
-          const res = await fetch(DETAILS_URL + movie.id + "?api_key=" + TMDB_API_KEY);
-          const details = await res.json();
-          //console.log("Movies:");
-          //console.log ("Slika: https://image.tmdb.org/t/p/w500/"+ movie.backdrop_path);
-          //console.log(details.original_title);
-          //console.log("Runtime: " +details.runtime);
-          //console.log("Release: " +details.release_date);
-          const image_path ="https://image.tmdb.org/t/p/w500/" + movie.backdrop_path;
-          const genres = details.genres;
-          let genresString = "";
-          for(let i = 0; i<Object.keys(genres).length; i++){
-            if(i==(Object.keys(genres).length-1)){
-              genresString += genres[i].name
-            }
-            else{
-              genresString += genres[i].name + ",";
-            }
-          }
-          for(let i=0; i<genresString.length; i++){
-            if(genresString[i] == ' '){
-              genresString[i] = +'%20';
-            }
-          }
-
-          for(let i=0; i<details.original_title.length; i++){
-            if(details.original_title[i] == ' '){
-              details.original_title[i] = +'%20';
-            }
-          }
-
-          const addLink = "http://localhost:3000/add?image="+image_path+"&name="+details.original_title+"&runtime="+details.runtime+"&release="+details.release_date+"&genres="+genresString;
-          let template= `
-            <div class="container" style = "max-width: 90%; height: auto;">
-            <a href="${addLink}" class="addHover">
-              <figure class="figure">
-                <div class="card-img">
-                  <img src="${BASE_URL}${movie.backdrop_path}" class="figure-img img-fluid rounded" alt="A">
-                </div>
-                <figcaption class="figure-caption text-center"><h5>${movie.original_title}</h5></figcaption>
-              </figure>
-            </a>
-          </div>
-            `
-          container.innerHTML = template;
-        tbl.appendChild(container);
-        };
-
+      const movies = await getTMDB();
+      displayMovies(movies);
     }
 
     async function handleSearch(){
       var searchTerm = document.getElementById("search").value;
-      let tbl = document.getElementById("movies_display");
       if(searchTerm.length){
-        var tokens = searchTerm
-               .toLowerCase()
-               .split(' ')
-               .filter(function(token){
-                  return token.trim() !== '';
-               });
-        var searchTermRegex = new RegExp(tokens.join('|'), 'gim');
-        const movies = await getTMDB();
-
-        tbl.innerHTML= '';
-
-        let counter = 0;
-        let container;
-        let searchedMovies_id = [];
-
-        for (let movie of movies) {
-            if(movie.original_title.match(searchTermRegex)){
-              console.log("one should be found");
-              if (counter % 3 == 0){
-                const newRow = document.createElement('tr');
-                tbl.appendChild(newRow);
-              }
-                container = document.createElement('td');
-              counter++;
-
-              const res = await fetch(DETAILS_URL + movie.id + "?api_key=" + TMDB_API_KEY);
-              const details = await res.json();
-
-              const image_path ="https://image.tmdb.org/t/p/w500/" + movie.backdrop_path;
-          const genres = details.genres;
-          let genresString = "";
-          for(let i = 0; i<Object.keys(genres).length; i++){
-            if(i==(Object.keys(genres).length-1)){
-              genresString += genres[i].name
-            }
-            else{
-              genresString += genres[i].name + ",";
-            }
-          }
-          for(let i=0; i<genresString.length; i++){
-            if(genresString[i] == ' '){
-              genresString[i] = +'%20';
-            }
-          }
-
-          for(let i=0; i<details.original_title.length; i++){
-            if(details.original_title[i] == ' '){
-              details.original_title[i] = +'%20';
-            }
-          }
-
-          const addLink = "http://localhost:3000/add?image="+image_path+"&name="+details.original_title+"&runtime="+details.runtime+"&release="+details.release_date+"&genres="+genresString;
-          let template= `
-            <div class="container" style = "max-width: 90%; height: auto;">
-            <a href="${addLink}" class="addHover">
-              <figure class="figure">
-                <div class="card-img">
-                  <img src="${BASE_URL}${movie.backdrop_path}" class="figure-img img-fluid rounded" alt="A">
-                </div>
-                <figcaption class="figure-caption text-center"><h5>${movie.original_title}</h5></figcaption>
-              </figure>
-            </a>
-          </div>
-            `
-              container.innerHTML = template;
-              tbl.appendChild(container);
-            }
-        }
+        var tokens = searchTerm.split(' ');
+        var searchMovie= tokens.join('+');
+        const movies = await searchTMDB(searchMovie);
+        displayMovies(movies);
       }
       else{
         tbl.innerHTML= '';
